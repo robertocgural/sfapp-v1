@@ -1,0 +1,93 @@
+version: '3.5'
+
+services:
+  sfapp-v1-symfony-web:
+    container_name: sfapp-v1-symfony-web
+    build:
+      context: ./docker/nginx
+      args:
+        UID: $U_ID
+    ports:
+      - 1000:80
+    volumes:
+      - ./public:/appdata/www/public
+    networks:
+      - sfapp-v1-symfony-network
+    depends_on:
+      - sfapp-v1-symfony-be
+
+#  docker-symfony-node:
+#    container_name: docker-symfony-node
+#    image: node:18.16.0
+#    ports:
+#      - 3000:3000
+#    command: npm install, npm, start
+#    networks:
+#      - docker-symfony-network
+#    depends_on:
+#      - docker-symfony-be
+  
+  sfapp-v1-symfony-be:
+    container_name: sfapp-v1-symfony-be
+    build:
+      context: ./docker/php
+      args:
+        UID: $U_ID
+    environment:
+      PHP_IDE_CONFIG: serverName=Sfapp-v1
+#      PHP_XDEBUG_ENABLED: 1
+#      XDEBUG_CONFIG: remote_host=172.17.0.1 remote_port=9005 # Linux users
+      XDEBUG_CLIENT_HOST: 172.17.0.1
+      XDEBUG_CLIENT_PORT: 9003
+#      XDEBUG_CONFIG: remote_host=host.docker.internal remote_port=9005 # MacOS users
+    volumes:
+      - ./:/appdata/www
+      - ./docker/php/xdebug-linux.ini:/usr/local/etc/php/conf.d/xdebug.ini # Linux users
+#    - ./docker/php/xdebug-macos.ini:/usr/local/etc/php/conf.d/xdebug.ini # MacOS users
+#      - ~/.ssh/id_rsa:/home/appuser/.ssh/id_rsa
+    networks:
+      - sfapp-v1-symfony-network
+    depends_on:
+      - sfapp-v1-symfony-db
+
+  sfapp-v1-symfony-pma:
+    container_name: sfapp-v1-symfony-pma
+#    image: adminer
+#    restart: always
+#    ports:
+#      - 8080:8080
+    image: phpmyadmin/phpmyadmin
+    ports:
+      - 8080:80
+    environment:
+      - PMA_HOST=sfapp-v1-symfony-db
+      - MYSQL_ROOT_PASSWORD=root
+#      - PMA_ARBITRARY=1
+    depends_on:
+      - sfapp-v1-symfony-db
+    networks:
+      - sfapp-v1-symfony-network
+
+  sfapp-v1-symfony-db:
+    container_name: sfapp-v1-symfony-db
+    image: mysql:8.0
+    ports:
+      - 40000:3306
+    environment:
+      MYSQL_DATABASE: sfapp-v1-bd
+#      MYSQL_USER: user
+#      MYSQL_PASSWORD: password
+      MYSQL_ROOT_PASSWORD: root
+      command: mysqld, --character-set-server=utf8mb4, --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - sfapp-v1-symfony-database-data:/var/lib/mysql
+    networks:
+      - sfapp-v1-symfony-network
+
+volumes:
+
+  sfapp-v1-symfony-database-data:
+
+networks:
+ sfapp-v1-symfony-network:
+    external: true
