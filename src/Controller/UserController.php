@@ -6,6 +6,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bridge\Doctrine\ManagerRegistry;
 
 class UserController extends AbstractController{
     
@@ -15,7 +16,7 @@ class UserController extends AbstractController{
     
     public function getUsers(EntityManagerInterface $em): Response
     {
-        dd($em);
+        
         //$em = $this->getDoctrine()->getManager();
         $listUsers = $em->getRepository('App::Users')->findAll([], ['name' => 'ASC']);
         
